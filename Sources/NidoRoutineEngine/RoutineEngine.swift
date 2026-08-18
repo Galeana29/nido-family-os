@@ -1,8 +1,26 @@
 import Foundation
 import NidoDomain
 
-public struct ResolutionPolicy: Sendable, Equatable { public let materialityThresholdMinutes:Int; public init(materialityThresholdMinutes:Int=5){self.materialityThresholdMinutes=materialityThresholdMinutes} }
-public enum ResolutionError: Error, Equatable { case invalidOffsets, infeasibleWindow }
+public struct ResolutionPolicy: Sendable, Equatable {
+    /// Movements smaller than this are not worth redrawing the caregiver's day over.
+    public let materialityThresholdMinutes: Int
+    public let version: EnginePolicyVersion
+    public init(materialityThresholdMinutes: Int = 5, version: EnginePolicyVersion = .v0) {
+        self.materialityThresholdMinutes = materialityThresholdMinutes
+        self.version = version
+    }
+}
+
+public enum ResolutionError: Error, Equatable {
+    case invalidOffsets
+    case infeasibleWindow
+    /// A rule references another rule that is not in the template.
+    case unknownReference(RuleID)
+    /// A → B → C → A. Invalid configuration rather than something to break arbitrarily.
+    case dependencyCycle
+    /// An event whose payload does not match its type, e.g. `napStarted` carrying a meal payload.
+    case inconsistentEventPayload(EventID)
+}
 /// Timing plus the structured reasons behind it, so explanations never have to be reconstructed after the fact.
 public struct DependentResolution: Sendable, Equatable {
     public let timing: ResolvedTiming

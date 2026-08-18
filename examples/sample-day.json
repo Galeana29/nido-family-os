@@ -1,1 +1,94 @@
-{"date":"2026-08-17","timezone":"America/Vancouver","mode":"normal","planned":[{"type":"wake","time":"07:00","priority":"P1"},{"type":"breakfast","time":"07:20","priority":"P1"},{"type":"nap1","window":{"earliest":"10:05","preferred":"10:20","latest":"10:40"},"priority":"P2"},{"type":"lunch","time":"12:00","priority":"P1"},{"type":"outdoor","time":"13:00","priority":"P3"},{"type":"nap2","dependsOn":"nap1.end","offset":{"min":195,"preferred":210,"max":225},"priority":"P2"},{"type":"dinner","time":"17:45","priority":"P1"},{"type":"bedtime","anchor":{"earliest":"19:00","preferred":"19:30","latest":"20:00"},"priority":"P1"}],"externalCommitments":[{"type":"appointment","start":"13:30","end":"14:10","priority":"P1"}],"events":[{"type":"childWoke","at":"07:04"},{"type":"mealRated","meal":"breakfast","at":"07:45","rating":"small"},{"type":"napStarted","session":"nap-a","at":"10:44"},{"type":"napEnded","session":"nap-a","at":"11:31"}],"notes":"Expected resolutions are produced by executable tests, not stored as handwritten fixture output."}
+{
+  "date": "2026-08-17",
+  "timezone": "America/Vancouver",
+  "mode": "normal",
+  "currentTime": "12:00",
+  "notes": "Inputs only. Expected output is produced by the engine and reviewed as examples/sample-day.snapshot.txt; never handwritten here.",
+
+  "planned": [
+    {
+      "id": "wake",
+      "name": "Wake",
+      "category": "sleep",
+      "priority": "P1",
+      "durationMinutes": 0,
+      "anchor": { "earliest": "06:30", "preferred": "07:00", "latest": "07:30" }
+    },
+    {
+      "id": "breakfast",
+      "name": "Breakfast",
+      "category": "feeding",
+      "priority": "P1",
+      "durationMinutes": 30,
+      "anchor": { "earliest": "07:00", "preferred": "07:20", "latest": "08:00" }
+    },
+    {
+      "id": "nap1",
+      "name": "Nap 1",
+      "category": "sleep",
+      "priority": "P2",
+      "durationMinutes": 45,
+      "window": { "earliest": "10:05", "preferred": "10:20", "latest": "10:40" }
+    },
+    {
+      "id": "lunch",
+      "name": "Lunch",
+      "category": "feeding",
+      "priority": "P1",
+      "durationMinutes": 40,
+      "anchor": { "earliest": "11:45", "preferred": "12:00", "latest": "12:45" }
+    },
+    {
+      "id": "outdoor",
+      "name": "Outdoor time",
+      "category": "outdoor",
+      "priority": "P3",
+      "durationMinutes": 45,
+      "window": { "earliest": "12:45", "preferred": "13:00", "latest": "14:00" }
+    },
+    {
+      "id": "nap2",
+      "name": "Nap 2",
+      "category": "sleep",
+      "priority": "P2",
+      "durationMinutes": 75,
+      "dependsOn": {
+        "rule": "nap1",
+        "kind": "dependent",
+        "offsetMinutes": { "min": 195, "preferred": 210, "max": 225 }
+      }
+    },
+    {
+      "id": "dinner",
+      "name": "Dinner",
+      "category": "feeding",
+      "priority": "P1",
+      "durationMinutes": 40,
+      "anchor": { "earliest": "17:30", "preferred": "17:45", "latest": "18:15" }
+    },
+    {
+      "id": "bedtime",
+      "name": "Bedtime",
+      "category": "sleep",
+      "priority": "P1",
+      "durationMinutes": 30,
+      "anchor": { "earliest": "19:00", "preferred": "19:30", "latest": "20:00" },
+      "adjustmentPolicies": [
+        { "type": "durationResponsive", "reference": "nap2", "shortfallMinutes": 30, "shiftMinutes": 20 }
+      ]
+    }
+  ],
+
+  "externalCommitments": [
+    { "id": "appointment", "start": "13:30", "end": "14:10", "priority": "P1" }
+  ],
+
+  "events": [
+    { "type": "childWoke", "at": "07:04", "rule": "wake" },
+    { "type": "mealRated", "at": "07:45", "rule": "breakfast", "payload": { "kind": "mealRated", "rating": "small" } },
+    { "type": "napStarted", "at": "10:44", "rule": "nap1", "session": "nap-a", "payload": { "kind": "sleep", "sleepType": "nap1", "assistance": "cuddle" } },
+    { "type": "napEnded", "at": "11:31", "rule": "nap1", "session": "nap-a", "payload": { "kind": "sleep", "sleepType": "nap1", "assistance": "cuddle" } }
+  ],
+
+  "manualOverrides": []
+}

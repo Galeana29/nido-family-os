@@ -7,10 +7,14 @@ let package = Package(
     products: [
         .library(name: "NidoDomain", targets: ["NidoDomain"]),
         .library(name: "NidoRoutineEngine", targets: ["NidoRoutineEngine"]),
+        .library(name: "NidoScenario", targets: ["NidoScenario"]),
+        .executable(name: "NidoScenarioRunner", targets: ["NidoScenarioRunner"]),
     ],
     targets: [
         .target(name: "NidoDomain"),
         .target(name: "NidoRoutineEngine", dependencies: ["NidoDomain"]),
-        .testTarget(name: "NidoRoutineEngineTests", dependencies: ["NidoDomain", "NidoRoutineEngine"]),
+        .target(name: "NidoScenario", dependencies: ["NidoDomain", "NidoRoutineEngine"]),
+        .executableTarget(name: "NidoScenarioRunner", dependencies: ["NidoScenario"]),
+        .testTarget(name: "NidoRoutineEngineTests", dependencies: ["NidoDomain", "NidoRoutineEngine", "NidoScenario"]),
     ]
 )

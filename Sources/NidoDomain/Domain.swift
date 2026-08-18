@@ -44,11 +44,52 @@ public struct LoggedEvent: Codable, Sendable, Equatable {
     public let type: EventType; public let startedAt: Date; public let endedAt: Date?; public let source: EventSource; public let createdBy: PersonID?
     public let createdAt: Date; public let modifiedAt: Date; public let revision: Int; public let deletedAt: Date?
     public let payload: EventPayload
-    public init(id:EventID=EventID(), householdID:HouseholdID, personID:PersonID?=nil, logicalSessionID:SessionID?=nil, type:EventType, startedAt:Date, endedAt:Date?=nil, source:EventSource, createdBy:PersonID?=nil, createdAt:Date, modifiedAt:Date, revision:Int=1, deletedAt:Date?=nil, payload:EventPayload = .none){ self.id=id;self.householdID=householdID;self.personID=personID;self.logicalSessionID=logicalSessionID;self.type=type;self.startedAt=startedAt;self.endedAt=endedAt;self.source=source;self.createdBy=createdBy;self.createdAt=createdAt;self.modifiedAt=modifiedAt;self.revision=revision;self.deletedAt=deletedAt;self.payload=payload }
+    /// Optional attribution to the planned rule this event fulfils. Reality is still recorded
+    /// independently of the plan; this only lets the engine match one against the other.
+    public let ruleID: RuleID?
+    public init(id:EventID=EventID(), householdID:HouseholdID, personID:PersonID?=nil, logicalSessionID:SessionID?=nil, type:EventType, startedAt:Date, endedAt:Date?=nil, source:EventSource, createdBy:PersonID?=nil, createdAt:Date, modifiedAt:Date, revision:Int=1, deletedAt:Date?=nil, payload:EventPayload = .none, ruleID:RuleID?=nil){ self.id=id;self.householdID=householdID;self.personID=personID;self.logicalSessionID=logicalSessionID;self.type=type;self.startedAt=startedAt;self.endedAt=endedAt;self.source=source;self.createdBy=createdBy;self.createdAt=createdAt;self.modifiedAt=modifiedAt;self.revision=revision;self.deletedAt=deletedAt;self.payload=payload;self.ruleID=ruleID }
 }
-public enum TimingRule: Sendable, Equatable { case exact(Date); case anchor(earliest:Date,preferred:Date,latest:Date); case window(earliest:Date,preferred:Date,latest:Date); case relative(reference:OccurrenceID,minMinutes:Int,preferredMinutes:Int,maxMinutes:Int); case dependent(reference:OccurrenceID,minMinutes:Int,preferredMinutes:Int,maxMinutes:Int) }
-public enum AdjustmentPolicy: Sendable, Equatable { case durationResponsive(reference:OccurrenceID,thresholdMinutes:Int,shiftMinutes:Int); case externalConflict, modePolicy, manualOverride }
-public enum AdjustmentReason: Sendable, Equatable { case dependencyResolved(reference:OccurrenceID); case retainedForStability(deltaMinutes:Int); case shortDuration(reference:OccurrenceID,minutes:Int); case externalCommitmentConflict, manualOverride }
+
+extension LoggedEvent {
+    /// Type and payload must describe the same thing. `EventType` and `EventPayload` are separate
+    /// dimensions, so the compiler alone would allow `napStarted` carrying a meal payload.
+    /// Until the command layer is the only construction path, this is the guard that closes that hole.
+    public var hasConsistentPayload: Bool {
+        switch (type, payload) {
+        case (_, .none):
+            return true
+        case (.mealRated, .mealRated):
+            return true
+        case (.napStarted, .sleep), (.napEnded, .sleep), (.nightSleepStarted, .sleep), (.nightSleepEnded, .sleep):
+            return true
+        case (.breastfeedStarted, .breastfeed), (.breastfeedEnded, .breastfeed):
+            return true
+        case (.weightRecorded, .weight):
+            return true
+        case (.healthNoteRecorded, .healthNote):
+            return true
+        default:
+            return false
+        }
+    }
+}
+/// Machine-readable cause for every adjustment. UI renders these; explanation text never invents them,
+/// and numbers shown to the caregiver are injected from here rather than regenerated.
+public enum AdjustmentReason: Sendable, Equatable, Hashable {
+    case dependencyResolved(reference: OccurrenceID)
+    case retainedForStability(deltaMinutes: Int)
+    case shortDuration(reference: OccurrenceID, minutes: Int)
+    case externalCommitmentConflict
+    case manualOverride
+    /// Moved because a higher-priority occurrence or commitment already held the slot.
+    case priorityDisplacement(byPriority: RoutinePriority)
+    /// Left out of a simplified day. Omission is not failure and must never be presented as one.
+    case omittedForSimplifiedDay
+    /// The referenced occurrence has not happened yet, so its planned end was used.
+    case estimatedFromPlan(reference: OccurrenceID)
+    /// Held in place by a locked care instruction.
+    case careConstraint(id: CareInstructionID)
+}
 public struct ResolvedTiming: Sendable, Equatable { public let earliest:Date; public let preferred:Date; public let latest:Date; public init(earliest:Date,preferred:Date,latest:Date){ precondition(earliest <= preferred && preferred <= latest); self.earliest=earliest;self.preferred=preferred;self.latest=latest } }
 /// Carries both the originally planned timing and the resolved timing so every adjustment is explainable against intent.
 public struct ResolvedOccurrence: Sendable, Equatable {
