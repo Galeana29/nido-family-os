@@ -30,12 +30,12 @@ do {
     let napStart = clock.instant(WallClock(hour: 15, minute: 1))
     let napEnd = clock.instant(WallClock(hour: 15, minute: 34))
     let household = HouseholdID(ScenarioFixture.stableUUID("household"))
-    let session = SessionID(ScenarioFixture.stableUUID("session:nap-b"))
 
-    let shortNap = [
-        LoggedEvent(id: EventID(ScenarioFixture.stableUUID("event:nap2:start")), householdID: household, logicalSessionID: session, type: .napStarted, startedAt: napStart, source: .watch, createdAt: napStart, modifiedAt: napStart, payload: .sleep(type: .nap2, assistance: SleepAssistance.none), ruleID: nap2),
-        LoggedEvent(id: EventID(ScenarioFixture.stableUUID("event:nap2:end")), householdID: household, logicalSessionID: session, type: .napEnded, startedAt: napEnd, source: .watch, createdAt: napEnd, modifiedAt: napEnd, payload: .sleep(type: .nap2, assistance: SleepAssistance.none), ruleID: nap2)
-    ]
+    // DO → LOG → RECALCULATE, through the same command layer the Watch would use.
+    var ledger = EventLedger(events: input.events)
+    try ledger.apply(StartSleepCommand(householdID: household, occurredAt: napStart, source: .watch, ruleID: nap2, sleepType: .nap2), now: napStart)
+    try ledger.apply(EndSleepCommand(householdID: household, occurredAt: napEnd, source: .watch, ruleID: nap2, sleepType: .nap2), now: napEnd)
+    let shortNap = ledger.effectiveEvents
 
     let afterShortNap = ResolutionInput(
         operationalDay: input.operationalDay,
@@ -44,7 +44,7 @@ do {
         template: input.template,
         careConstraints: input.careConstraints,
         commitments: input.commitments,
-        events: input.events + shortNap,
+        events: shortNap,
         overrides: input.overrides,
         previousPlan: resolved.plan,
         currentTime: napEnd

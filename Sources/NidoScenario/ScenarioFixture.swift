@@ -148,22 +148,17 @@ extension ScenarioFixture {
             )
         }
 
-        let events = try self.events.map { spec -> LoggedEvent in
-            guard let type = EventType(rawValue: spec.type) else { throw ScenarioError.unknownEventType(spec.type) }
+        // Reality is replayed through the command layer, exactly as a caregiver's taps would be.
+        // Nothing here can assemble an event by hand, so a fixture that describes an impossible day —
+        // a nap that ends without starting — fails to load rather than resolving into nonsense.
+        var ledger = EventLedger()
+        var latestEventTime = clock.instant(WallClock(hour: 0, minute: 0))
+        for spec in self.events {
             let at = clock.instant(try Self.wallClock(spec.at))
-            return LoggedEvent(
-                id: EventID(Self.stableUUID("event:" + spec.type + ":" + spec.at)),
-                householdID: household,
-                logicalSessionID: spec.session.map { SessionID(Self.stableUUID("session:" + $0)) },
-                type: type,
-                startedAt: at,
-                source: .app,
-                createdAt: at,
-                modifiedAt: at,
-                payload: try Self.payload(spec.payload),
-                ruleID: spec.rule.map { Self.ruleID($0) }
-            )
+            latestEventTime = max(latestEventTime, at)
+            try ledger.apply(try Self.command(spec, at: at, household: household), now: latestEventTime)
         }
+        let events = ledger.effectiveEvents
 
         let overrides = try (manualOverrides ?? []).map { spec -> ManualOverride in
             ManualOverride(
@@ -226,6 +221,54 @@ extension ScenarioFixture {
             }
         }
         throw ScenarioError.unknownTimingRule(spec.id)
+    }
+
+    /// Maps a fixture event onto the command a caregiver would have issued.
+    static func command(_ spec: Event, at occurredAt: Date, household: HouseholdID) throws -> any LoggedEventCommand {
+        let rule = spec.rule.map { ruleID($0) }
+        let commandID = CommandID(stableUUID("command:" + spec.type + ":" + spec.at))
+
+        switch spec.type {
+        case "childWoke":
+            return RecordWakeCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule)
+        case "napStarted", "nightSleepStarted":
+            return StartSleepCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule, sleepType: sleepType(spec), assistance: assistance(spec))
+        case "napEnded", "nightSleepEnded":
+            return EndSleepCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule, sleepType: sleepType(spec))
+        case "mealStarted":
+            return StartMealCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule)
+        case "mealEnded":
+            return EndMealCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule)
+        case "mealRated":
+            guard let raw = spec.payload?.rating, let rating = MealRating(rawValue: raw) else {
+                throw ScenarioError.unknownPayload(spec.type)
+            }
+            return RateMealCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule, rating: rating)
+        case "breastfeedStarted":
+            return StartNursingCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule, context: context(spec), planned: spec.payload?.planned ?? false)
+        case "breastfeedEnded":
+            return EndNursingCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, ruleID: rule, context: context(spec), planned: spec.payload?.planned ?? false)
+        case "diaperChanged":
+            return LogDiaperCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app)
+        case "waterLogged":
+            return LogWaterCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app)
+        case "modeChanged":
+            return ChangeDayModeCommand(commandID: commandID, householdID: household, occurredAt: occurredAt, source: .app, mode: DayMode(rawValue: spec.payload?.text ?? "normal") ?? .normal)
+        default:
+            throw ScenarioError.unknownEventType(spec.type)
+        }
+    }
+
+    private static func sleepType(_ spec: Event) -> SleepType {
+        spec.payload?.sleepType.flatMap { SleepType(rawValue: $0) } ?? .other
+    }
+
+    private static func assistance(_ spec: Event) -> SleepAssistance? {
+        spec.payload?.assistance.flatMap { SleepAssistance(rawValue: $0) }
+    }
+
+    private static func context(_ spec: Event) -> BreastfeedContext {
+        spec.payload?.context.flatMap { BreastfeedContext(rawValue: $0) } ?? .other
     }
 
     static func payload(_ spec: PayloadSpec?) throws -> EventPayload {
