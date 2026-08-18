@@ -1,0 +1,30 @@
+{
+  "date": "2026-08-17",
+  "mode": "normal",
+  "planned": [
+    {"type":"wake","time":"07:00","priority":"P1"},
+    {"type":"breakfast","time":"07:20","priority":"P1"},
+    {"type":"nap1","window":{"earliest":"10:05","preferred":"10:20","latest":"10:40"},"priority":"P2"},
+    {"type":"lunch","time":"12:00","priority":"P1"},
+    {"type":"outdoor","time":"13:00","priority":"P3"},
+    {"type":"nap2","dependsOn":"nap1.end","offset":{"min":195,"preferred":210,"max":225},"priority":"P2"},
+    {"type":"dinner","time":"17:45","priority":"P1"},
+    {"type":"bedtime","anchor":{"earliest":"19:00","preferred":"19:30","latest":"20:00"},"priority":"P1"}
+  ],
+  "externalCommitments": [
+    {"type":"appointment","start":"13:30","end":"14:10","priority":"P0"}
+  ],
+  "events": [
+    {"type":"childWoke","at":"07:04"},
+    {"type":"mealRated","meal":"breakfast","at":"07:45","rating":"small"},
+    {"type":"napStarted","session":"nap-a","at":"10:44"},
+    {"type":"napEnded","session":"nap-a","at":"11:31"}
+  ],
+  "expectedResolution": {
+    "lunch":"12:05",
+    "outdoor":"omitted-or-moved",
+    "appointment":"13:30",
+    "nap2Preferred":"14:45",
+    "explanation":"Nap 2 moved because Nap 1 ended later and the external appointment is fixed."
+  }
+}
