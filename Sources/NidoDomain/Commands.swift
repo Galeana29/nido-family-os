@@ -407,6 +407,51 @@ public struct ChangeDayModeCommand: LoggedEventCommand {
     }
 }
 
+/// Removes something that should not have been recorded, without erasing that it once was.
+///
+/// A tombstone is a revision like any other. Hard-deleting a row would let a second caregiver's device
+/// resurrect it on the next sync, and would quietly rewrite what the app told someone yesterday.
+public struct DeleteEventCommand: LoggedEventCommand {
+    public let commandID: CommandID
+    public let householdID: HouseholdID
+    public let personID: PersonID?
+    public let occurredAt: Date
+    public let source: EventSource
+    public let createdBy: PersonID?
+    public let target: EventID
+
+    public init(commandID: CommandID = CommandID(), householdID: HouseholdID, personID: PersonID? = nil, occurredAt: Date, source: EventSource, createdBy: PersonID? = nil, target: EventID) {
+        self.commandID = commandID
+        self.householdID = householdID
+        self.personID = personID
+        self.occurredAt = occurredAt
+        self.source = source
+        self.createdBy = createdBy
+        self.target = target
+    }
+
+    public func events(in ledger: EventLedger, now: Date) throws -> [LoggedEvent] {
+        guard let original = ledger.event(id: target) else { throw CommandError.unknownEvent(target) }
+        return [LoggedEvent(
+            householdID: householdID,
+            personID: original.personID,
+            logicalSessionID: original.logicalSessionID,
+            type: original.type,
+            startedAt: original.startedAt,
+            source: source,
+            createdBy: createdBy,
+            createdAt: now,
+            modifiedAt: now,
+            revision: original.revision + 1,
+            deletedAt: now,
+            payload: original.payload,
+            ruleID: original.ruleID,
+            commandID: commandID,
+            supersedes: original.id
+        )]
+    }
+}
+
 // MARK: - Correction
 
 /// Corrects when something happened without destroying what was recorded before.

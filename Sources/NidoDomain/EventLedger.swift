@@ -64,12 +64,7 @@ public struct EventLedger: Sendable, Equatable {
     }
 
     /// What actually holds now: corrections applied, tombstoned events removed.
-    public var effectiveEvents: [LoggedEvent] {
-        let superseded = Set(events.compactMap(\.supersedes))
-        return events
-            .filter { $0.deletedAt == nil && !superseded.contains($0.id) }
-            .sorted { $0.startedAt < $1.startedAt }
-    }
+    public var effectiveEvents: [LoggedEvent] { LedgerProjection.effective(events) }
 
     public func event(id: EventID) -> LoggedEvent? {
         events.first { $0.id == id }
