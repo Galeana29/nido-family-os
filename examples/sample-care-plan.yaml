@@ -1,46 +1,21 @@
 household:
   name: "Home"
   timezone: "America/Vancouver"
-
-people:
-  - id: child-1
-    role: child
-    displayName: "Child"
-  - id: parent-1
-    role: parent
-    displayName: "Primary caregiver"
-
 carePlan:
   instructions:
     - id: instruction-feeding-structure
       authorType: clinician
       text: "Use structured daytime feeding opportunities instead of continuous on-demand milk feeds."
       locked: true
-      priority: 0
-
-  activePrograms:
-    - program-gradual-daytime-nursing
-
+      priority: P0
 programs:
   - id: program-gradual-daytime-nursing
-    name: "Gradual daytime nursing structure"
     stage: 2
     source: caregiver-approved
-    rules:
-      pauseWhen:
-        - sickMode
-        - persistentlyLowIntake
-      currentGoal: "Attempt nap routine without nursing first; allow configured fallback when needed."
-
-routine:
-  bedtimeAnchor:
-    preferred: "19:30"
-    earliest: "19:00"
-    latest: "20:00"
-
-  meals:
-    breakfast: "07:20"
-    snack1: "09:40"
-    lunch: "12:00"
-    snack2: "15:45"
-    dinner: "17:45"
+    pauseConditions:
+      - type: dayMode
+        equals: sick
+      - type: consecutiveMealRatings
+        ratings: [none, taste]
+        count: 3
+        note: "Example deterministic configuration only; real thresholds must be explicitly approved by the program owner."

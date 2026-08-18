@@ -1,49 +1,9 @@
 # NIDO Project Status
 
-## Current phase
+Current phase: **Executable engine proof**. Conceptual architecture is frozen while Swift implementation validates/disproves it.
 
-**Architecture / product definition**
+Product loop: `PLAN → NOW → DO → OBSERVE → LOG → RECALCULATE → NEXT`.
 
-The product architecture, core UX philosophy, deterministic Routine Engine, data model, system integrations and safety boundaries have been defined.
+Current milestone: canonical imperfect day executable and green. Nap1 end 11:31 + offsets 195/210/225 must resolve 14:46/15:01/15:16; appointment is P1; invalid offsets fail; immaterial jitter retains a still-valid prior plan; invalid prior timing is never retained.
 
-## Current objective
-
-Build the first executable iOS skeleton and prove the core loop:
-
-`PLAN → NOW → DO → LOG → RECALCULATE → NEXT`
-
-## First implementation milestone
-
-A simulated full day where:
-
-- child wakes;
-- breakfast is logged;
-- first nap starts late;
-- the day recalculates;
-- an external appointment creates a conflict;
-- second nap is short;
-- bedtime adjusts inside guardrails;
-- all surfaces read one `ResolvedDayPlan`.
-
-## Next engineering steps
-
-1. Create Xcode workspace and Swift packages.
-2. Implement core domain entities.
-3. Implement Routine Engine v0 with exact, anchor, window, relative and dependent timing rules.
-4. Add scenario test harness.
-5. Build Today screen against fixture data.
-6. Add event ledger + local persistence.
-7. Connect actual event logging to re-resolution.
-8. Add notification attention manager.
-9. Add calendar read bridge.
-10. Add Widget / Live Activity / Watch incrementally.
-
-## Deferred
-
-- medical diagnostics;
-- growth percentile interpretation;
-- Android;
-- social/community;
-- marketplace;
-- ML-based scheduling prediction;
-- fully autonomous AI planning.
+Next: expand resolver pipeline; add more Operational Day/DST scenarios; persistence adapter spike; two-device sync spike; Today against engine output.
