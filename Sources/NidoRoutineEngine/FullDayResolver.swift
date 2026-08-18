@@ -28,7 +28,13 @@ struct ActualState {
             switch event.type {
             case .napStarted, .mealStarted, .breastfeedStarted, .nightSleepStarted, .routineStarted:
                 starts[ruleID] = event.startedAt
-            case .napEnded, .mealEnded, .breastfeedEnded, .nightSleepEnded, .routineCompleted, .childWoke, .mealRated:
+            case .childWoke:
+                // A wake is instantaneous: it both opens and closes its occurrence, so the plan is
+                // pinned to when the child actually woke rather than when the template hoped.
+                starts[ruleID] = event.startedAt
+                ends[ruleID] = event.startedAt
+                completed.insert(ruleID)
+            case .napEnded, .mealEnded, .breastfeedEnded, .nightSleepEnded, .routineCompleted, .mealRated:
                 ends[ruleID] = event.endedAt ?? event.startedAt
                 completed.insert(ruleID)
             default:
