@@ -9,15 +9,20 @@ let package = Package(
         .library(name: "NidoRoutineEngine", targets: ["NidoRoutineEngine"]),
         .library(name: "NidoPersistence", targets: ["NidoPersistence"]),
         .library(name: "NidoScenario", targets: ["NidoScenario"]),
+        .library(name: "NidoTodayFeature", targets: ["NidoTodayFeature"]),
         .executable(name: "NidoScenarioRunner", targets: ["NidoScenarioRunner"]),
+        .executable(name: "NidoToday", targets: ["NidoToday"]),
     ],
     targets: [
         .target(name: "NidoDomain"),
         .target(name: "NidoRoutineEngine", dependencies: ["NidoDomain"]),
         .target(name: "NidoPersistence", dependencies: ["NidoDomain"]),
         .target(name: "NidoScenario", dependencies: ["NidoDomain", "NidoRoutineEngine"]),
+        .target(name: "NidoTodayFeature", dependencies: ["NidoDomain", "NidoRoutineEngine"]),
         .executableTarget(name: "NidoScenarioRunner", dependencies: ["NidoScenario"]),
+        .executableTarget(name: "NidoToday", dependencies: ["NidoTodayFeature", "NidoScenario", "NidoPersistence"]),
         .testTarget(name: "NidoRoutineEngineTests", dependencies: ["NidoDomain", "NidoRoutineEngine", "NidoScenario"]),
         .testTarget(name: "NidoPersistenceTests", dependencies: ["NidoDomain", "NidoPersistence"]),
+        .testTarget(name: "NidoTodayFeatureTests", dependencies: ["NidoDomain", "NidoRoutineEngine", "NidoPersistence", "NidoTodayFeature"]),
     ]
 )
