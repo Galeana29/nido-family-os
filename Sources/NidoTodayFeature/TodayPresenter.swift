@@ -20,8 +20,16 @@ public struct TodayPresenter: Sendable {
         let rules = Dictionary(uniqueKeysWithValues: template.rules.map { ($0.id, $0) })
         let visible = result.plan.occurrences.filter { $0.status != .completed && $0.status != .cancelled && $0.status != .skipped }
 
-        let current = visible.first { $0.status == .active } ?? visible.first { $0.status == .ready } ?? visible.first
-        let upcoming = visible.filter { $0.ruleID != current?.ruleID }.prefix(3)
+        // The engine deliberately has no "missed" state: once a window opens an occurrence stays ready
+        // until someone acts on it, because a late nap is not a failure. That is right for the domain
+        // and wrong for this screen — at noon, a nap whose window closed at 10:40 is not what matters
+        // now. Today therefore asks a question the engine does not: is this still current?
+        let stillCurrent = visible.filter { now <= $0.resolvedTiming.latest }
+        // An occurrence in progress is current by definition, even if it has run past its window.
+        let current = visible.first { $0.status == .active }
+            ?? stillCurrent.first { $0.status == .ready }
+            ?? stillCurrent.first
+        let upcoming = stillCurrent.filter { $0.ruleID != current?.ruleID }.prefix(3)
 
         return TodayScreen(
             greeting: Strings.greeting(hour: hour(of: now), language),

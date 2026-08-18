@@ -66,6 +66,16 @@ final class TodayPresenterTests: XCTestCase {
         XCTAssertEqual(now.primaryActionLabel, "Despertó")
     }
 
+    func testAWindowThatClosedHoursAgoIsNotWhatMattersNow() async throws {
+        // Nap 1's window closed at 10:40 and nothing was logged. At noon the day has moved on, and the
+        // hero is lunch. The engine still holds the nap as ready, because it refuses to call anything
+        // missed; deciding what is *current* is this screen's job.
+        let screen = try await makeStore().screen(now: at(12, 0), language: .spanish)
+
+        XCTAssertEqual(screen.now?.ruleID, lunch)
+        XCTAssertFalse(screen.next.contains { $0.ruleID == nap1 })
+    }
+
     func testTheNextStripShowsOnlyTheNextFewThings() async throws {
         let screen = try await makeStore().screen(now: at(6, 0), language: .spanish)
 
@@ -106,8 +116,12 @@ final class TodayPresenterTests: XCTestCase {
         for language in Language.allCases {
             let screen = try await store.screen(now: at(11, 0), language: language)
             let text = (screen.dayState + " " + (screen.now?.explanation ?? "")).lowercased()
-            for forbidden in ["late", "missed", "failed", "behind", "tarde de más", "fallaste", "perdiste", "incumpl"] {
-                XCTAssertFalse(text.contains(forbidden), "\(language): found guilt language in \"\(text)\"")
+            // Whole phrases, not fragments: "running 24 minutes later" is a neutral report and must
+            // not be caught by a naive search for "late".
+            let forbidden = ["failed", "missed", "you forgot", "behind schedule", "too late", "should have",
+                             "fallaste", "olvidaste", "incumpl", "mal día", "deberías", "muy tarde"]
+            for phrase in forbidden {
+                XCTAssertFalse(text.contains(phrase), "\(language): found guilt language in \"\(text)\"")
             }
         }
     }
@@ -118,7 +132,9 @@ final class TodayPresenterTests: XCTestCase {
         let store = makeStore()
         try await store.perform(.startSleep(nap1), now: at(10, 44))
         try await store.perform(.endSleep(nap1), now: at(11, 31))
-        let screen = try await store.screen(now: at(11, 35), language: .english)
+        try await store.perform(.startMeal(lunch), now: at(12, 0))
+        try await store.perform(.finishMeal(lunch), now: at(12, 35))
+        let screen = try await store.screen(now: at(13, 0), language: .english)
         let now = try XCTUnwrap(screen.now)
 
         // Nap 2 is timed from when nap 1 actually ended, and the card says why.
@@ -164,16 +180,15 @@ final class TodayPresenterTests: XCTestCase {
     func testATapMovesTheRestOfTheDayOnScreen() async throws {
         let store = makeStore()
         let before = try await store.screen(now: at(8, 0), language: .spanish)
-        let plannedNap2 = try XCTUnwrap(before.next.first { $0.ruleID == nap2 })
+        let plannedNap2 = try XCTUnwrap(before.next.first { $0.ruleID == nap2 }).time
 
         try await store.perform(.startSleep(nap1), now: at(10, 44))
         try await store.perform(.endSleep(nap1), now: at(11, 31))
         let after = try await store.screen(now: at(11, 31), language: .spanish)
-        let resolvedNap2 = try XCTUnwrap(after.now)
+        let resolvedNap2 = try XCTUnwrap(after.next.first { $0.ruleID == nap2 })
 
-        XCTAssertEqual(resolvedNap2.ruleID, nap2)
-        XCTAssertNotEqual(resolvedNap2.timeRange, plannedNap2.time, "the day visibly reflows after a single tap")
-        XCTAssertTrue(after.next.contains { $0.wasAdjusted } || resolvedNap2.explanation != nil)
+        XCTAssertNotEqual(resolvedNap2.time, plannedNap2, "the day visibly reflows after a single tap")
+        XCTAssertTrue(resolvedNap2.wasAdjusted, "and says so, quietly")
     }
 
     func testDelayingIsRespectedOnScreen() async throws {
