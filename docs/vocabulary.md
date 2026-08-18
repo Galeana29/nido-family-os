@@ -21,6 +21,18 @@ more → Wanted more / Quiso más
 
 Never translate `normal` as Good/Bien: the scale describes quantity, not performance.
 
+## Day modes
+Domain keywords are stable; display language is neutral.
+
+normal → Normal day / Día normal
+daycare → Daycare day / Día de guardería
+out → Out day / Día fuera de casa
+sick → Sick day / Día de enfermedad
+chaos → Simplified day / Día simplificado
+custom → Custom / Personalizado
+
+The domain keyword for the simplified mode remains `chaos` (older docs call it Chaos Mode — same mode). UI never labels the day itself as chaos or failure; the user-facing name is always Simplified day / Día simplificado.
+
 ## Priorities
 P0 safety/locked care; P1 anchor/external commitment; P2 important; P3 flexible; P4 optional.
 

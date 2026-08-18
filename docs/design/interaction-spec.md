@@ -9,4 +9,4 @@ Nap: Asleep logs start; Woke up logs end. Time is injected from event input.
 Manual delay: +10/+20/choose/not doing this; override becomes explicit engine input and is not corrected back unless P0 violation.
 Quick Log: Sleep/Meal/Nursing-Milk/Diaper/Water/Weight/Note.
 Voice later uses deterministic temporal ambiguity classes, not numeric confidence.
-Simplified Day is explicit user choice, never inferred from uncompleted items.
+Simplified day (domain mode `chaos`, naming per `docs/vocabulary.md`) is explicit user choice, never inferred from uncompleted items.
