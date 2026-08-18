@@ -1,0 +1,3 @@
+# The golden snapshot is compared byte for byte against engine output, so it must stay LF
+# regardless of which platform checks it out.
+*.snapshot.txt text eol=lf

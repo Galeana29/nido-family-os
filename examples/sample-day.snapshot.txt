@@ -1,0 +1,18 @@
+NIDO scenario snapshot
+policy   v0.1.0
+day      2026-08-17 (America/Vancouver)
+mode     normal
+now      12:00
+
+occurrence    pri  status     original           resolved           reasons
+----------------------------------------------------------------------------------------------------------------------
+Wake          P1   completed  06:30 07:00 07:30  06:30 07:04 07:30  actualEventRecorded(+4m)
+Breakfast     P1   completed  07:00 07:20 08:00  07:00 07:20 08:00  -
+Nap 1         P2   completed  10:05 10:20 10:40  10:05 10:44 10:44  actualEventRecorded(+24m)
+Lunch         P1   ready      11:45 12:00 12:45  11:45 12:00 12:45  -
+Outdoor time  P3   upcoming   12:45 13:00 14:00  12:45 12:45 14:00  externalCommitmentConflict
+Nap 2         P2   upcoming   14:20 14:35 14:50  14:46 15:01 15:16  dependencyResolved
+Dinner        P1   upcoming   17:30 17:45 18:15  17:30 17:45 18:15  -
+Bedtime       P1   upcoming   19:00 19:30 20:00  19:00 19:30 20:00  -
+
+conflicts: none
