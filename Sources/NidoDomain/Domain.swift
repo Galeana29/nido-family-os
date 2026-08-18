@@ -87,6 +87,9 @@ public enum AdjustmentReason: Sendable, Equatable, Hashable {
     case omittedForSimplifiedDay
     /// The referenced occurrence has not happened yet, so its planned end was used.
     case estimatedFromPlan(reference: OccurrenceID)
+    /// Reality wins: the occurrence sits where it actually happened, this many minutes from the plan.
+    /// Negative means earlier than planned. Never phrased as lateness or failure in the interface.
+    case actualEventRecorded(deltaMinutes: Int)
     /// Held in place by a locked care instruction.
     case careConstraint(id: CareInstructionID)
 }

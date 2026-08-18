@@ -214,6 +214,10 @@ private struct DayResolver {
         var window = window
 
         if let actualStart = actuals.starts[rule.id] {
+            let deltaMinutes = Int(actualStart.timeIntervalSince(window.preferred) / 60)
+            if deltaMinutes != 0 {
+                reasons[rule.id, default: []].append(.actualEventRecorded(deltaMinutes: deltaMinutes))
+            }
             return window.including(actualStart)
         }
 

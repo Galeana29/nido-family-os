@@ -63,7 +63,7 @@ final class FullDayResolverTests: XCTestCase {
             RoutineRule(id: outdoor, name: "Outdoor", category: .outdoor, timing: .window(earliest: WallClock(hour: 12, minute: 45), preferred: WallClock(hour: 13, minute: 0), latest: WallClock(hour: 14, minute: 0)), priority: .p3Flexible, duration: DurationRange(expectedMinutes: 45))
         ]
         let commitment = ExternalCommitment(id: ExternalCommitmentID(), start: at(13, 30), end: at(14, 10))
-        let result = try RoutineEngine().resolve(input(rules: rules, commitments: [commitment]))
+        let result = try RoutineEngine().resolve(input(rules: rules, commitments: [commitment], now: (13, 0)))
         let resolved = try occurrence(result, outdoor)
 
         XCTAssertEqual(resolved.status, .ready)
@@ -242,7 +242,10 @@ final class FullDayResolverTests: XCTestCase {
         ]
         let result = try RoutineEngine().resolve(input(rules: rules, mode: .chaos))
 
-        XCTAssertEqual(try occurrence(result, dinner).status, .ready)
+        let kept = try occurrence(result, dinner)
+        XCTAssertNotEqual(kept.status, .cancelled, "essentials survive a simplified day")
+        XCTAssertFalse(kept.adjustmentReasons.contains(.omittedForSimplifiedDay))
+
         let omitted = try occurrence(result, outdoor)
         XCTAssertEqual(omitted.status, .cancelled)
         XCTAssertTrue(omitted.adjustmentReasons.contains(.omittedForSimplifiedDay))

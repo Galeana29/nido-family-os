@@ -90,6 +90,7 @@ public struct SnapshotRenderer: Sendable {
         case .priorityDisplacement(let priority): return "priorityDisplacement(\(priorityText(priority)))"
         case .omittedForSimplifiedDay: return "omittedForSimplifiedDay"
         case .estimatedFromPlan: return "estimatedFromPlan"
+        case .actualEventRecorded(let minutes): return "actualEventRecorded(\(minutes >= 0 ? "+" : "")\(minutes)m)"
         case .careConstraint: return "careConstraint"
         }
     }
