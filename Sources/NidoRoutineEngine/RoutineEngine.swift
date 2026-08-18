@@ -20,6 +20,8 @@ public enum ResolutionError: Error, Equatable {
     case dependencyCycle
     /// An event whose payload does not match its type, e.g. `napStarted` carrying a meal payload.
     case inconsistentEventPayload(EventID)
+    /// A rule whose guardrails are inverted, e.g. an anchor whose earliest is after its latest.
+    case malformedWindow(RuleID)
 }
 /// Timing plus the structured reasons behind it, so explanations never have to be reconstructed after the fact.
 public struct DependentResolution: Sendable, Equatable {

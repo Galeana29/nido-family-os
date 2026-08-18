@@ -46,6 +46,9 @@ public struct ResolutionConflict: Sendable, Equatable, Hashable {
         case unsatisfiable(RuleID)
         /// Two placed occurrences overlap. The caregiver decides, not the engine.
         case overlap(RuleID, RuleID)
+        /// A placed occurrence runs through an external commitment. Reachable when the occurrence
+        /// could not be moved — pinned to reality, held by a locked instruction, or exact.
+        case commitmentOverlap(RuleID, ExternalCommitmentID)
     }
     public let kind: Kind
     public init(kind: Kind) { self.kind = kind }

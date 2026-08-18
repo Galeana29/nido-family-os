@@ -354,7 +354,7 @@ final class FullDayResolverTests: XCTestCase {
         let nap2 = RuleID()
         let rules = [
             RoutineRule(id: nap1, name: "Nap 1", category: .sleep, timing: .window(earliest: WallClock(hour: 10, minute: 5), preferred: WallClock(hour: 10, minute: 20), latest: WallClock(hour: 10, minute: 40)), priority: .p2ImportantRoutine, duration: DurationRange(expectedMinutes: 45)),
-            RoutineRule(id: nap2, name: "Nap 2", category: .sleep, timing: .dependent(reference: nap1, minMinutes: 225, preferredMinutes: 210, maxMinutes: 195), priority: .p2ImportantRoutine, duration: DurationRange(expectedMinutes: 75))
+            RoutineRule(id: nap2, name: "Nap 2", category: .sleep, timing: .dependent(reference: nap1, minMinutes: 195, preferredMinutes: 210, maxMinutes: 225), priority: .p2ImportantRoutine, duration: DurationRange(expectedMinutes: 75))
         ]
         let result = try RoutineEngine().resolve(input(rules: rules))
         for occurrence in result.plan.occurrences {
