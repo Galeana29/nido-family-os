@@ -7,7 +7,7 @@ import Foundation
 /// Hand-written cases test what we thought of; these test what we did not.
 final class EnginePropertyTests: XCTestCase {
     private let fixture = DayFixture()
-    private let seed: UInt64 = 0x1D0_FAM11Y
+    private let seed: UInt64 = 0x1D0_FEED_2026
 
     private struct Scenario {
         let input: ResolutionInput
