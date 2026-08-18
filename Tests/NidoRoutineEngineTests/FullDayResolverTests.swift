@@ -91,7 +91,10 @@ final class FullDayResolverTests: XCTestCase {
         let commitment = ExternalCommitment(id: ExternalCommitmentID(), start: at(11, 0), end: at(14, 0))
         let result = try RoutineEngine().resolve(input(rules: rules, commitments: [commitment]))
 
-        XCTAssertEqual(result.conflicts, [ResolutionConflict(kind: .unsatisfiable(lunch))])
+        // Both facts are reported: no slot was free, and where it had to be placed it runs through
+        // the commitment. The caregiver needs each of them to decide.
+        XCTAssertTrue(result.conflicts.contains(ResolutionConflict(kind: .unsatisfiable(lunch))))
+        XCTAssertTrue(result.conflicts.contains { if case .commitmentOverlap(lunch, _) = $0.kind { return true }; return false })
         XCTAssertNotEqual(try occurrence(result, lunch).status, .cancelled)
     }
 
@@ -354,7 +357,7 @@ final class FullDayResolverTests: XCTestCase {
         let nap2 = RuleID()
         let rules = [
             RoutineRule(id: nap1, name: "Nap 1", category: .sleep, timing: .window(earliest: WallClock(hour: 10, minute: 5), preferred: WallClock(hour: 10, minute: 20), latest: WallClock(hour: 10, minute: 40)), priority: .p2ImportantRoutine, duration: DurationRange(expectedMinutes: 45)),
-            RoutineRule(id: nap2, name: "Nap 2", category: .sleep, timing: .dependent(reference: nap1, minMinutes: 225, preferredMinutes: 210, maxMinutes: 195), priority: .p2ImportantRoutine, duration: DurationRange(expectedMinutes: 75))
+            RoutineRule(id: nap2, name: "Nap 2", category: .sleep, timing: .dependent(reference: nap1, minMinutes: 195, preferredMinutes: 210, maxMinutes: 225), priority: .p2ImportantRoutine, duration: DurationRange(expectedMinutes: 75))
         ]
         let result = try RoutineEngine().resolve(input(rules: rules))
         for occurrence in result.plan.occurrences {

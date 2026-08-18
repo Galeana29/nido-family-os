@@ -101,7 +101,7 @@ private struct DayResolver {
     func occurrenceID(_ ruleID: RuleID) -> OccurrenceID { OccurrenceID(ruleID.rawValue) }
 
     mutating func run() throws -> ResolutionResult {
-        try validateEvents()
+        try validateInput()
         let ordered = try DependencyGraph.topologicalOrder(rules: input.template.rules)
 
         let original = computeWindows(ordered, applyReality: false).windows
@@ -148,9 +148,28 @@ private struct DayResolver {
         return ResolutionResult(plan: plan, conflicts: conflicts, policyVersion: policy.version)
     }
 
-    private func validateEvents() throws {
+    /// Rejects malformed input rather than quietly normalizing it. A template whose guardrails are
+    /// inverted is a configuration error, and silently sorting the bounds would hide it from whoever
+    /// authored the routine.
+    private func validateInput() throws {
         for event in input.events where !event.hasConsistentPayload {
             throw ResolutionError.inconsistentEventPayload(event.id)
+        }
+        for rule in input.template.rules {
+            switch rule.timing {
+            case .anchor(let earliest, let preferred, let latest),
+                 .window(let earliest, let preferred, let latest):
+                guard earliest <= preferred, preferred <= latest else {
+                    throw ResolutionError.malformedWindow(rule.id)
+                }
+            case .relative(_, let minMinutes, let preferredMinutes, let maxMinutes),
+                 .dependent(_, let minMinutes, let preferredMinutes, let maxMinutes):
+                guard minMinutes <= preferredMinutes, preferredMinutes <= maxMinutes else {
+                    throw ResolutionError.invalidOffsets
+                }
+            case .exact:
+                continue
+            }
         }
     }
 
@@ -374,6 +393,14 @@ private struct DayResolver {
                 return (rule, Interval(start: window.preferred, end: window.preferred.addingTimeInterval(TimeInterval(rule.expectedDurationMinutes * 60))))
             }
             .sorted { $0.1.start < $1.1.start }
+
+        // An occurrence that could not be moved may still collide with a calendar entry. Saying so is
+        // the whole point: the caregiver resolves it, the engine does not pretend the day is fine.
+        for (rule, interval) in placed {
+            for commitment in input.commitments where interval.overlaps(Interval(start: commitment.start, end: commitment.end)) {
+                conflicts.append(ResolutionConflict(kind: .commitmentOverlap(rule.id, commitment.id)))
+            }
+        }
 
         guard placed.count > 1 else { return }
         for outer in 0..<(placed.count - 1) {

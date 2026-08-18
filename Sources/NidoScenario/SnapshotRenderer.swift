@@ -49,6 +49,8 @@ public struct SnapshotRenderer: Sendable {
                     lines.append("conflict: no free slot for \(ruleNames[ruleID] ?? "?")")
                 case .overlap(let first, let second):
                     lines.append("conflict: overlap between \(ruleNames[first] ?? "?") and \(ruleNames[second] ?? "?")")
+                case .commitmentOverlap(let ruleID, _):
+                    lines.append("conflict: \(ruleNames[ruleID] ?? "?") runs through an external commitment")
                 }
             }
         }
