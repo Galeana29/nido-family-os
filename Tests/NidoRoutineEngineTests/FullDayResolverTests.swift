@@ -132,6 +132,59 @@ final class FullDayResolverTests: XCTestCase {
         XCTAssertTrue(resolved.adjustmentReasons.contains(.estimatedFromPlan(reference: OccurrenceID(nap1.rawValue))))
     }
 
+    func testRelativeTimingFollowsThePlannedEndOfItsReference() throws {
+        let breakfast = RuleID()
+        let snack = RuleID()
+        let rules = [
+            RoutineRule(id: breakfast, name: "Breakfast", category: .feeding, timing: .anchor(earliest: WallClock(hour: 7, minute: 0), preferred: WallClock(hour: 7, minute: 20), latest: WallClock(hour: 8, minute: 0)), priority: .p1AnchorExternalCommitment, duration: DurationRange(expectedMinutes: 30)),
+            RoutineRule(id: snack, name: "Snack", category: .feeding, timing: .relative(reference: breakfast, minMinutes: 120, preferredMinutes: 150, maxMinutes: 180), priority: .p3Flexible, duration: DurationRange(expectedMinutes: 20))
+        ]
+        let result = try RoutineEngine().resolve(input(rules: rules, now: (7, 0)))
+        let resolved = try occurrence(result, snack).resolvedTiming
+
+        // Breakfast is planned 07:20 and runs 30 minutes, so the spacing is measured from 07:50.
+        XCTAssertEqual(minutes(at(7, 50), resolved.preferred), 150)
+        XCTAssertEqual(minutes(at(7, 50), resolved.earliest), 120)
+        XCTAssertEqual(minutes(at(7, 50), resolved.latest), 180)
+    }
+
+    func testLockedCareInstructionHoldsItsSlotAndSaysSo() throws {
+        let medication = RuleID()
+        let instruction = CareInstructionID()
+        let rules = [
+            RoutineRule(id: medication, name: "Medication", category: .health, timing: .anchor(earliest: WallClock(hour: 13, minute: 0), preferred: WallClock(hour: 13, minute: 45), latest: WallClock(hour: 14, minute: 30)), priority: .p2ImportantRoutine, duration: DurationRange(expectedMinutes: 10))
+        ]
+        let commitment = ExternalCommitment(id: ExternalCommitmentID(), start: at(13, 30), end: at(14, 10))
+        let constraint = CareConstraint(id: instruction, ruleID: medication, isLocked: true)
+        let result = try RoutineEngine().resolve(input(rules: rules, commitments: [commitment], careConstraints: [constraint]))
+        let resolved = try occurrence(result, medication)
+
+        XCTAssertEqual(resolved.resolvedTiming.preferred, at(13, 45), "a locked instruction is not rescheduled around a calendar entry")
+        XCTAssertTrue(resolved.adjustmentReasons.contains(.careConstraint(id: instruction)))
+    }
+
+    func testSkippingIsRecordedAsTheCaregiversDecision() throws {
+        let outdoor = RuleID()
+        let rules = [
+            RoutineRule(id: outdoor, name: "Outdoor", category: .outdoor, timing: .window(earliest: WallClock(hour: 13, minute: 0), preferred: WallClock(hour: 13, minute: 30), latest: WallClock(hour: 15, minute: 0)), priority: .p3Flexible, duration: DurationRange(expectedMinutes: 45))
+        ]
+        let override = ManualOverride(ruleID: outdoor, kind: .skip, decidedAt: at(12, 0))
+        let result = try RoutineEngine().resolve(input(rules: rules, overrides: [override]))
+
+        XCTAssertEqual(try occurrence(result, outdoor).status, .skipped, "the caregiver skipped it; the engine did not cancel it")
+    }
+
+    func testDelayIsTreatedAsInputRatherThanSomethingToUndo() throws {
+        let lunch = RuleID()
+        let rules = [
+            RoutineRule(id: lunch, name: "Lunch", category: .feeding, timing: .anchor(earliest: WallClock(hour: 11, minute: 45), preferred: WallClock(hour: 12, minute: 0), latest: WallClock(hour: 12, minute: 45)), priority: .p1AnchorExternalCommitment, duration: DurationRange(expectedMinutes: 40))
+        ]
+        let override = ManualOverride(ruleID: lunch, kind: .delay(minutes: 20), decidedAt: at(11, 55))
+        let result = try RoutineEngine().resolve(input(rules: rules, overrides: [override]))
+
+        XCTAssertEqual(try occurrence(result, lunch).resolvedTiming.preferred, at(12, 20))
+    }
+
     func testDependencyCycleIsRejected() {
         let first = RuleID()
         let second = RuleID()
