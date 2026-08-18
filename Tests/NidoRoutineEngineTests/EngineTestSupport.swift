@@ -1,6 +1,6 @@
 import Foundation
-import NidoDomain
-import NidoRoutineEngine
+@testable import NidoDomain
+@testable import NidoRoutineEngine
 
 /// Shared scaffolding for engine tests: one operational day, one time zone, and terse builders.
 struct DayFixture {
@@ -42,6 +42,10 @@ struct DayFixture {
         )
     }
 
+    /// Builds an event directly rather than through a command. Resolver tests need synthetic ledger
+    /// states that no legal sequence of commands would produce — a nap end with no start, for
+    /// instance — precisely to prove the resolver survives them. Ledger and command behaviour is
+    /// tested through the real command path in EventLedgerTests.
     func event(_ type: EventType, at instant: Date, rule: RuleID, payload: EventPayload = .none) -> LoggedEvent {
         LoggedEvent(householdID: HouseholdID(), type: type, startedAt: instant, source: .app, createdAt: instant, modifiedAt: instant, payload: payload, ruleID: rule)
     }

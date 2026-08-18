@@ -23,8 +23,10 @@ struct ActualState {
     private(set) var completed: Set<RuleID> = []
 
     init(events: [LoggedEvent]) {
+        // A corrected event is still in the ledger; only its latest revision describes reality.
+        let superseded = Set(events.compactMap(\.supersedes))
         for event in events.sorted(by: { $0.startedAt < $1.startedAt }) {
-            guard event.deletedAt == nil, let ruleID = event.ruleID else { continue }
+            guard event.deletedAt == nil, !superseded.contains(event.id), let ruleID = event.ruleID else { continue }
             switch event.type {
             case .napStarted, .mealStarted, .breastfeedStarted, .nightSleepStarted, .routineStarted:
                 starts[ruleID] = event.startedAt

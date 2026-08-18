@@ -36,6 +36,7 @@ public enum EventPayload: Codable, Sendable, Equatable {
     case breastfeed(context: BreastfeedContext, planned: Bool)
     case weight(kilograms: Double)
     case healthNote(text: String)
+    case mode(DayMode)
     case none
 }
 
@@ -47,13 +48,19 @@ public struct LoggedEvent: Codable, Sendable, Equatable {
     /// Optional attribution to the planned rule this event fulfils. Reality is still recorded
     /// independently of the plan; this only lets the engine match one against the other.
     public let ruleID: RuleID?
-    public init(id:EventID=EventID(), householdID:HouseholdID, personID:PersonID?=nil, logicalSessionID:SessionID?=nil, type:EventType, startedAt:Date, endedAt:Date?=nil, source:EventSource, createdBy:PersonID?=nil, createdAt:Date, modifiedAt:Date, revision:Int=1, deletedAt:Date?=nil, payload:EventPayload = .none, ruleID:RuleID?=nil){ self.id=id;self.householdID=householdID;self.personID=personID;self.logicalSessionID=logicalSessionID;self.type=type;self.startedAt=startedAt;self.endedAt=endedAt;self.source=source;self.createdBy=createdBy;self.createdAt=createdAt;self.modifiedAt=modifiedAt;self.revision=revision;self.deletedAt=deletedAt;self.payload=payload;self.ruleID=ruleID }
+    /// The command that produced this event. Retrying a command must not record it twice.
+    public let commandID: CommandID?
+    /// The earlier revision this event replaces. Corrections append; they never rewrite.
+    public let supersedes: EventID?
+    /// Internal on purpose: `LoggedEventCommand` is the only supported way to create an event.
+    /// Decoding stays public so persisted and synchronized events can still be reconstructed.
+    init(id:EventID=EventID(), householdID:HouseholdID, personID:PersonID?=nil, logicalSessionID:SessionID?=nil, type:EventType, startedAt:Date, endedAt:Date?=nil, source:EventSource, createdBy:PersonID?=nil, createdAt:Date, modifiedAt:Date, revision:Int=1, deletedAt:Date?=nil, payload:EventPayload = .none, ruleID:RuleID?=nil, commandID:CommandID?=nil, supersedes:EventID?=nil){ self.id=id;self.householdID=householdID;self.personID=personID;self.logicalSessionID=logicalSessionID;self.type=type;self.startedAt=startedAt;self.endedAt=endedAt;self.source=source;self.createdBy=createdBy;self.createdAt=createdAt;self.modifiedAt=modifiedAt;self.revision=revision;self.deletedAt=deletedAt;self.payload=payload;self.ruleID=ruleID;self.commandID=commandID;self.supersedes=supersedes }
 }
 
 extension LoggedEvent {
-    /// Type and payload must describe the same thing. `EventType` and `EventPayload` are separate
-    /// dimensions, so the compiler alone would allow `napStarted` carrying a meal payload.
-    /// Until the command layer is the only construction path, this is the guard that closes that hole.
+    /// Type and payload must describe the same thing. Commands now guarantee this by construction,
+    /// so this remains as a check on events arriving from outside the command layer: decoded from
+    /// storage, imported, or synchronized from another device running an older build.
     public var hasConsistentPayload: Bool {
         switch (type, payload) {
         case (_, .none):
@@ -67,6 +74,8 @@ extension LoggedEvent {
         case (.weightRecorded, .weight):
             return true
         case (.healthNoteRecorded, .healthNote):
+            return true
+        case (.modeChanged, .mode):
             return true
         default:
             return false
