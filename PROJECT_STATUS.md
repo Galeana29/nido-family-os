@@ -4,6 +4,31 @@ Current phase: **Executable engine proof**. Conceptual architecture is frozen wh
 
 Product loop: `PLAN → NOW → DO → OBSERVE → LOG → RECALCULATE → NEXT`.
 
-Current milestone: canonical imperfect day executable and green. Nap1 end 11:31 + offsets 195/210/225 must resolve 14:46/15:01/15:16; appointment is P1; invalid offsets fail; immaterial jitter retains a still-valid prior plan; invalid prior timing is never retained.
+## Milestone: canonical imperfect day — achieved
 
-Next: expand resolver pipeline; add more Operational Day/DST scenarios; persistence adapter spike; two-device sync spike; Today against engine output.
+`examples/sample-day.json` is loaded by the test suite and resolved end to end by `RoutineEngine.resolve(_:)`.
+The reviewed engine output is locked as `examples/sample-day.snapshot.txt`. Expected times are produced by
+the engine and approved in review; they are never handwritten into a fixture or a test.
+
+What the resolver covers today: all five placement rules (exact, anchor, window, relative, dependent),
+dependency graph with cycle detection, priority placement P0→P4, external commitments, duration-responsive
+adjustment, manual override, simplified day, hysteresis, and conflict reporting instead of silent dropping.
+
+## Not yet built
+
+- command layer: events are still constructible directly, so `LoggedEvent.hasConsistentPayload` guards the
+  type/payload hole until commands are the only construction path;
+- persistence of any kind;
+- randomized/property scenario coverage;
+- any user interface.
+
+## Next
+
+1. engine invariants and seeded property tests, including resolution across a DST change;
+2. commands + event ledger (`DO → LOG → RECALCULATE` for real);
+3. two-device persistence/sync spike to decide ADR 0011;
+4. NidoApp with Today rendered from `ResolvedDayPlan`;
+5. real logging, local persistence, notifications and calendar;
+6. seven-day family alpha.
+
+Watch, Siri, Live Activities and AI stay deferred until the engine is trustworthy and visible.

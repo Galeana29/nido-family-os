@@ -12,6 +12,8 @@ cancelled → Cancelled / Cancelado
 
 `adjusted` is not lifecycle; derive an indicator from adjustmentReasons. Do not use `overdue` for parenting routine items.
 
+`skipped` and `cancelled` are both terminal but never interchangeable: **skipped is a caregiver decision**, **cancelled is an engine omission** (no room in the day, or a simplified day). The distinction matters because only one of them is a choice, and neither is a failure. There is deliberately no "missed" state: once a window opens an occurrence stays `ready` until someone acts on it.
+
 ## Meal quantity
 none → Nothing / Nada
 taste → Tasted / Probó
