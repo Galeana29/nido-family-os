@@ -91,7 +91,10 @@ final class FullDayResolverTests: XCTestCase {
         let commitment = ExternalCommitment(id: ExternalCommitmentID(), start: at(11, 0), end: at(14, 0))
         let result = try RoutineEngine().resolve(input(rules: rules, commitments: [commitment]))
 
-        XCTAssertEqual(result.conflicts, [ResolutionConflict(kind: .unsatisfiable(lunch))])
+        // Both facts are reported: no slot was free, and where it had to be placed it runs through
+        // the commitment. The caregiver needs each of them to decide.
+        XCTAssertTrue(result.conflicts.contains(ResolutionConflict(kind: .unsatisfiable(lunch))))
+        XCTAssertTrue(result.conflicts.contains { if case .commitmentOverlap(lunch, _) = $0.kind { return true }; return false })
         XCTAssertNotEqual(try occurrence(result, lunch).status, .cancelled)
     }
 
