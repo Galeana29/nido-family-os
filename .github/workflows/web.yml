@@ -1,0 +1,59 @@
+name: Web
+
+# Builds the WebAssembly engine and publishes web/ to GitHub Pages. The engine is not committed —
+# it is 57 MB — so this is what turns a green main into something a caregiver can open on a phone.
+#
+# Requires Pages to be enabled once, with Settings -> Pages -> Source set to "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Package.swift'
+      - 'Sources/**'
+      - 'web/**'
+      - 'examples/sample-day.json'
+      - '.github/workflows/web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.2'
+
+      - name: Install the Swift SDK for WebAssembly
+        run: |
+          curl -fL --retry 3 -o wasm-sdk.tar.gz \
+            https://download.swift.org/swift-6.2-release/wasm-sdk/swift-6.2-RELEASE/swift-6.2-RELEASE_wasm.artifactbundle.tar.gz
+          swift sdk install ./wasm-sdk.tar.gz
+
+      - name: Build the web app
+        run: bash scripts/build-web.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
