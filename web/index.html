@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NIDO</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NIDO">
+<meta name="theme-color" content="#12100e">
+</head>
+<body>
+<main id="app">
+  <header class="head">
+    <div>
+      <p class="greeting" id="greeting">…</p>
+      <p class="date" id="dateLine"></p>
+    </div>
+    <button class="lang" id="lang" type="button" aria-label="Cambiar idioma">ES</button>
+  </header>
+
+  <p class="dayState" id="dayState"></p>
+
+  <section class="card" id="nowCard" hidden>
+    <p class="eyebrow" id="eyebrow"></p>
+    <h1 class="title" id="title"></h1>
+    <p class="range"><span id="timeRange"></span> · <span id="statusLabel"></span></p>
+    <p class="why" id="explanation" hidden></p>
+    <button class="primary" id="primary" type="button"></button>
+    <div class="secondary">
+      <button id="delay" type="button">+15 min</button>
+      <button id="skip" type="button">Hoy no</button>
+    </div>
+  </section>
+
+  <section class="empty" id="emptyCard" hidden>
+    <p>Nada pendiente por ahora.</p>
+  </section>
+
+  <ul class="next" id="next"></ul>
+
+  <ul class="notices" id="notices"></ul>
+
+  <footer class="clock">
+    <p class="clockLabel">Reloj simulado: <strong id="clockNow">—</strong></p>
+    <div class="clockButtons">
+      <button id="plus15" type="button">+15 min</button>
+      <button id="plus60" type="button">+1 h</button>
+      <button id="reset" type="button">Reiniciar el día</button>
+    </div>
+    <p class="engine" id="engineNote">El motor de NIDO corre dentro de esta página.</p>
+  </footer>
+</main>
+
+<div class="boot" id="boot">
+  <p id="bootText">Cargando el motor…</p>
+  <div class="bar"><div class="fill" id="bootFill"></div></div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

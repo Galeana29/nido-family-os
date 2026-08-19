@@ -28,7 +28,9 @@ public actor TodayStore {
         timeZone: TimeZone,
         commitments: [ExternalCommitment] = [],
         careConstraints: [CareConstraint] = [],
-        mode: DayMode = .normal
+        mode: DayMode = .normal,
+        overrides: [ManualOverride] = [],
+        previousPlan: ResolvedDayPlan? = nil
     ) {
         self.store = store
         self.engine = engine
@@ -39,7 +41,16 @@ public actor TodayStore {
         self.commitments = commitments
         self.careConstraints = careConstraints
         self.mode = mode
+        self.overrides = overrides
+        self.previousPlan = previousPlan
     }
+
+    /// What the caregiver has decided by hand, and what the ledger holds. A client that survives
+    /// being closed has to be able to read both back out, or a delay lasts only as long as the
+    /// process does. Reading is all that is offered: decisions still go through `perform`.
+    public func currentOverrides() -> [ManualOverride] { overrides }
+
+    public func currentEvents() async throws -> [LoggedEvent] { try await store.allEvents() }
 
     public func resolve(now: Date) async throws -> ResolutionResult {
         let ledger = try await store.ledger()

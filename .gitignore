@@ -6,3 +6,5 @@ xcuserdata/
 .env
 .env.*
 *.swp
+web/nido.wasm
+web/sample-day.json
