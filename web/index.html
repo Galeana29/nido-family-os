@@ -22,6 +22,12 @@
     <button class="lang" id="lang" type="button" aria-label="Cambiar idioma">ES</button>
   </header>
 
+  <button class="stage" id="stage" type="button">
+    <span class="stageName" id="stageName"></span>
+    <span class="stageGoal" id="stageGoal"></span>
+    <span class="stageMore" id="stageMore">Ver la etapa y el semáforo →</span>
+  </button>
+
   <p class="dayState" id="dayState"></p>
 
   <section class="card" id="nowCard" hidden>
@@ -29,31 +35,76 @@
     <h1 class="title" id="title"></h1>
     <p class="range"><span id="timeRange"></span> · <span id="statusLabel"></span></p>
     <p class="why" id="explanation" hidden></p>
+    <p class="food" id="nowFood" hidden></p>
     <button class="primary" id="primary" type="button"></button>
     <div class="secondary">
       <button id="delay" type="button">+15 min</button>
       <button id="skip" type="button">Hoy no</button>
+      <button id="detail" type="button">Cómo</button>
     </div>
   </section>
 
   <section class="empty" id="emptyCard" hidden>
-    <p>Nada pendiente por ahora.</p>
+    <p id="emptyText">Nada pendiente por ahora.</p>
   </section>
-
-  <ul class="next" id="next"></ul>
 
   <ul class="notices" id="notices"></ul>
 
+  <h2 class="sectionTitle" id="dayTitle">El día completo</h2>
+  <ol class="day" id="day"></ol>
+
+  <section class="refs">
+    <details>
+      <summary id="rulesTitle">Reglas de la casa</summary>
+      <ol class="houseRules" id="houseRules"></ol>
+    </details>
+    <details>
+      <summary id="protocolTitle">Si no come</summary>
+      <div id="protocols"></div>
+    </details>
+    <details>
+      <summary id="sourcesTitle">De dónde sale esto</summary>
+      <p class="disclaimer" id="disclaimer"></p>
+      <ul class="sources" id="sources"></ul>
+    </details>
+  </section>
+
   <footer class="clock">
-    <p class="clockLabel">Reloj simulado: <strong id="clockNow">—</strong></p>
-    <div class="clockButtons">
-      <button id="plus15" type="button">+15 min</button>
-      <button id="plus60" type="button">+1 h</button>
-      <button id="reset" type="button">Reiniciar el día</button>
-    </div>
-    <p class="engine" id="engineNote">El motor de NIDO corre dentro de esta página.</p>
+    <p class="clockLabel"><span id="clockKind">Hora real</span>: <strong id="clockNow">—</strong></p>
+    <details class="demo">
+      <summary id="demoTitle">Probar el día sin esperarlo</summary>
+      <div class="clockButtons">
+        <button id="plus15" type="button">+15 min</button>
+        <button id="plus60" type="button">+1 h</button>
+        <button id="realtime" type="button">Volver a la hora real</button>
+        <button id="reset" type="button">Borrar lo registrado</button>
+        <button id="changePlan" type="button">Cambiar el plan</button>
+      </div>
+    </details>
+    <p class="engine" id="engineNote"></p>
   </footer>
 </main>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheetBack" id="sheetBack"></div>
+  <div class="sheetBody" role="dialog" aria-modal="true">
+    <div class="sheetGrip"></div>
+    <div id="sheetContent"></div>
+  </div>
+</div>
+
+<div class="load" id="load" hidden>
+  <div class="loadBody">
+    <h1>NIDO</h1>
+    <p class="loadLead">Esta app no trae el plan de tu casa. Cárgalo una vez y se queda guardado en este teléfono.</p>
+    <label class="loadButton">
+      <input type="file" id="planFile" accept="application/json,.json" hidden>
+      Elegir el archivo del plan
+    </label>
+    <p class="loadNote">El plan no se sube a ningún lado. Vive aquí, en este dispositivo, y funciona sin internet.</p>
+    <p class="loadError" id="loadError" hidden></p>
+  </div>
+</div>
 
 <div class="boot" id="boot">
   <p id="bootText">Cargando el motor…</p>

@@ -8,3 +8,7 @@ xcuserdata/
 *.swp
 web/nido.wasm
 web/sample-day.json
+web/days/
+examples/abril/
+web/plan.json
+nido-plan.json

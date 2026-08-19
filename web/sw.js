@@ -2,14 +2,13 @@
 // signal should still get the day. The shell is cached on install; the engine is big, so it is
 // cached the first time it is actually fetched.
 
-const VERSION = "nido-v1";
+const VERSION = "nido-v3";
 const SHELL = [
   "./",
   "index.html",
   "app.js",
   "styles.css",
   "manifest.webmanifest",
-  "sample-day.json",
   "vendor/browser_wasi_shim/index.js",
   "vendor/browser_wasi_shim/wasi.js",
   "vendor/browser_wasi_shim/wasi_defs.js",
@@ -23,6 +22,8 @@ const SHELL = [
   "icons/icon-512.png",
 ];
 
+// Only the app is cached, because only the app is served. The family plan lives in the phone that
+// loaded it and never travels through here.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
