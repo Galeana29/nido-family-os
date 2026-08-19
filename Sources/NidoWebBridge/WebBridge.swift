@@ -75,6 +75,20 @@ struct ScreenDTO: Codable {
     let notices: [String]
 }
 
+struct DayEntryDTO: Codable {
+    let ruleID: UUID
+    let time: String
+    let timeRange: String
+    let title: String
+    let statusLabel: String
+    let wasAdjusted: Bool
+    let isCurrent: Bool
+    let isSettled: Bool
+    let action: ActionDTO
+    let actionLabel: String
+    let explanation: String?
+}
+
 struct RuleDTO: Codable {
     let ruleID: UUID
     let name: String
@@ -92,6 +106,9 @@ struct Response: Codable {
     let overrides: [OverrideDTO]?
     let previousPreferred: [String: Date]?
     let rules: [RuleDTO]?
+    /// The whole day, not just what is next. A caregiver logging a snack at 15:40 should not have to
+    /// wait for the snack to become the hero.
+    let day: [DayEntryDTO]?
 }
 
 // MARK: - Translation
@@ -235,7 +252,7 @@ struct WebBridge {
             emit(try await respond(to: request), encoder: encoder)
         } catch {
             emit(
-                Response(ok: false, error: "\(error)", now: nil, screen: nil, events: nil, overrides: nil, previousPreferred: nil, rules: nil),
+                Response(ok: false, error: "\(error)", now: nil, screen: nil, events: nil, overrides: nil, previousPreferred: nil, rules: nil, day: nil),
                 encoder: encoder
             )
         }
@@ -280,8 +297,23 @@ struct WebBridge {
         }
 
         let result = try await store.resolve(now: now)
-        let screen = TodayPresenter(timeZone: seed.timeZone, language: language)
-            .screen(for: result, template: seed.template, now: now)
+        let presenter = TodayPresenter(timeZone: seed.timeZone, language: language)
+        let screen = presenter.screen(for: result, template: seed.template, now: now)
+        let day = presenter.day(for: result, template: seed.template, now: now).map { entry in
+            DayEntryDTO(
+                ruleID: entry.ruleID.rawValue,
+                time: entry.time,
+                timeRange: entry.timeRange,
+                title: entry.title,
+                statusLabel: entry.statusLabel,
+                wasAdjusted: entry.wasAdjusted,
+                isCurrent: entry.isCurrent,
+                isSettled: entry.isSettled,
+                action: actionDTO(from: entry.action),
+                actionLabel: entry.actionLabel,
+                explanation: entry.explanation
+            )
+        }
 
         var carried: [String: Date] = [:]
         for occurrence in result.plan.occurrences {
@@ -296,7 +328,8 @@ struct WebBridge {
             events: try await store.currentEvents(),
             overrides: overrideDTOs(from: await store.currentOverrides()),
             previousPreferred: carried,
-            rules: seed.template.rules.map { RuleDTO(ruleID: $0.id.rawValue, name: $0.name, category: $0.category.rawValue) }
+            rules: seed.template.rules.map { RuleDTO(ruleID: $0.id.rawValue, name: $0.name, category: $0.category.rawValue) },
+            day: day
         )
     }
 }

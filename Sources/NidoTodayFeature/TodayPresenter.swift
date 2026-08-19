@@ -20,15 +20,8 @@ public struct TodayPresenter: Sendable {
         let rules = Dictionary(uniqueKeysWithValues: template.rules.map { ($0.id, $0) })
         let visible = result.plan.occurrences.filter { $0.status != .completed && $0.status != .cancelled && $0.status != .skipped }
 
-        // The engine deliberately has no "missed" state: once a window opens an occurrence stays ready
-        // until someone acts on it, because a late nap is not a failure. That is right for the domain
-        // and wrong for this screen — at noon, a nap whose window closed at 10:40 is not what matters
-        // now. Today therefore asks a question the engine does not: is this still current?
         let stillCurrent = visible.filter { now <= $0.resolvedTiming.latest }
-        // An occurrence in progress is current by definition, even if it has run past its window.
-        let current = visible.first { $0.status == .active }
-            ?? stillCurrent.first { $0.status == .ready }
-            ?? stillCurrent.first
+        let current = hero(in: result, now: now)
         let upcoming = stillCurrent.filter { $0.ruleID != current?.ruleID }.prefix(3)
 
         return TodayScreen(
@@ -39,6 +32,48 @@ public struct TodayPresenter: Sendable {
             next: upcoming.compactMap { nextItem(for: $0, rule: rules[$0.ruleID]) },
             notices: notices(for: result, rules: rules)
         )
+    }
+
+    /// The whole day in order, including what is already settled.
+    ///
+    /// Today answers "what now"; this answers "what else", which is the question a caregiver asks
+    /// when they want to log something that is not the hero, or just see where the day stands. It is
+    /// the same projection — same times, same labels, same taps — so the two views cannot disagree.
+    public func day(for result: ResolutionResult, template: RoutineTemplate, now: Date) -> [DayEntry] {
+        let rules = Dictionary(uniqueKeysWithValues: template.rules.map { ($0.id, $0) })
+        let current = hero(in: result, now: now)
+        return result.plan.occurrences.compactMap { occurrence in
+            guard let rule = rules[occurrence.ruleID] else { return nil }
+            let action = primaryAction(for: rule, status: occurrence.status)
+            return DayEntry(
+                ruleID: rule.id,
+                time: clock(occurrence.resolvedTiming.preferred),
+                timeRange: timeRange(for: occurrence, rule: rule),
+                title: rule.name,
+                statusLabel: Strings.status(occurrence.status, language),
+                wasAdjusted: occurrence.originalTiming.preferred != occurrence.resolvedTiming.preferred,
+                isCurrent: occurrence.ruleID == current?.ruleID,
+                isSettled: occurrence.status == .completed || occurrence.status == .skipped || occurrence.status == .cancelled,
+                action: action,
+                actionLabel: Strings.actionLabel(action, language),
+                explanation: Strings.explanation(for: occurrence.adjustmentReasons, language)
+            )
+        }
+    }
+
+    /// What matters now.
+    ///
+    /// The engine deliberately has no "missed" state: once a window opens an occurrence stays ready
+    /// until someone acts on it, because a late nap is not a failure. That is right for the domain and
+    /// wrong for a screen — at noon, a nap whose window closed at 10:40 is not what matters now. So
+    /// this asks a question the engine does not: is this still current?
+    private func hero(in result: ResolutionResult, now: Date) -> ResolvedOccurrence? {
+        let visible = result.plan.occurrences.filter { $0.status != .completed && $0.status != .cancelled && $0.status != .skipped }
+        let stillCurrent = visible.filter { now <= $0.resolvedTiming.latest }
+        // An occurrence in progress is current by definition, even if it has run past its window.
+        return visible.first { $0.status == .active }
+            ?? stillCurrent.first { $0.status == .ready }
+            ?? stillCurrent.first
     }
 
     // MARK: - Now

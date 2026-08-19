@@ -15,7 +15,8 @@ echo "==> building NidoWebBridge for $SDK"
 swift build -c release --swift-sdk "$SDK" --product NidoWebBridge
 
 cp .build/wasm32-unknown-wasip1/release/NidoWebBridge.wasm web/nido.wasm
-cp examples/sample-day.json web/sample-day.json
+mkdir -p web/days
+cp examples/abril/*.json web/days/
 
 echo "==> web/ is ready ($(du -h web/nido.wasm | cut -f1) engine)"
 echo "    serve it with:  python3 -m http.server 8787 --directory web"
