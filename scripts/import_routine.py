@@ -4,9 +4,14 @@ Two outputs, on purpose:
 
   examples/abril/<date>.json   one scenario fixture per day - only what the engine may look at:
                                when things happen, how long they take, what depends on what.
-  web/plan.json                everything the engine must NOT look at - what to do, what to say
+  nido-plan.json               the same thing as one file to carry to a phone: the fixtures plus
+                               everything the engine must NOT look at - what to do, what to say
                                when she refuses, the food, the safety note, the weaning stage and
-                               the sources. Content, keyed by rule id.
+                               the sources.
+
+The bundle is never published. It is loaded once into the app on each phone and stays there: a
+child routine with feeding, sleep and weaning detail is not something to leave on a public site,
+and the app is built so it never has to be.
 
 Keeping them apart is the whole point. The engine decides times and nothing else; the guidance is
 the caregiver's own plan, quoted back, never invented here.
@@ -301,6 +306,16 @@ for date in sorted(rows_by_date):
     }
     print(date, weekday, len(planned), "reglas")
 
-with open(os.path.join(ROOT, "web/plan.json"), "w", encoding="utf-8") as handle:
-    json.dump(plan, handle, ensure_ascii=False, indent=2)
-print("web/plan.json:", len(plan["days"]), "dias,", len(protocols), "protocolos,", len(sources), "fuentes")
+days_text = {}
+for date in sorted(rows_by_date):
+    with open(os.path.join(ROOT, "examples/abril/%s.json" % date), encoding="utf-8") as handle:
+        days_text[date] = handle.read()
+
+bundle_path = os.path.join(ROOT, "nido-plan.json")
+with open(bundle_path, "w", encoding="utf-8") as handle:
+    json.dump({"plan": plan, "days": days_text}, handle, ensure_ascii=False)
+
+size = os.path.getsize(bundle_path) / 1024
+print("%s: %.0f KB, %d dias, %d protocolos, %d fuentes"
+      % (bundle_path, size, len(plan["days"]), len(protocols), len(sources)))
+print("Cargalo en la app una vez por telefono. No lo subas a ningun lado.")

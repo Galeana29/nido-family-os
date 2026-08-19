@@ -391,3 +391,33 @@ html, body {
 .traffic-verde { border-left-color: #4f9d69; }
 .traffic-amarillo { border-left-color: #d8a25c; }
 .traffic-rojo { border-left-color: #b4544a; }
+
+/* ------------------------------------------------- loading the family plan */
+
+.load {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  background: var(--bg);
+  padding: 2rem 1.5rem;
+  z-index: 30;
+}
+
+.load[hidden] { display: none; }
+.loadBody { max-width: 22rem; text-align: center; }
+.loadBody h1 { margin: 0 0 1.25rem; font-size: 2rem; letter-spacing: 0.14em; font-weight: 600; }
+.loadLead { margin: 0 0 1.75rem; color: var(--ink-soft); font-size: 1rem; line-height: 1.5; }
+
+.loadButton {
+  display: block;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 14px;
+  padding: 0.95rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loadNote { margin: 1.5rem 0 0; color: var(--ink-faint); font-size: 0.82rem; line-height: 1.5; }
+.loadError { margin: 1rem 0 0; color: #d98c7c; font-size: 0.85rem; }

@@ -78,6 +78,7 @@
         <button id="plus60" type="button">+1 h</button>
         <button id="realtime" type="button">Volver a la hora real</button>
         <button id="reset" type="button">Borrar lo registrado</button>
+        <button id="changePlan" type="button">Cambiar el plan</button>
       </div>
     </details>
     <p class="engine" id="engineNote"></p>
@@ -89,6 +90,19 @@
   <div class="sheetBody" role="dialog" aria-modal="true">
     <div class="sheetGrip"></div>
     <div id="sheetContent"></div>
+  </div>
+</div>
+
+<div class="load" id="load" hidden>
+  <div class="loadBody">
+    <h1>NIDO</h1>
+    <p class="loadLead">Esta app no trae el plan de tu casa. Cárgalo una vez y se queda guardado en este teléfono.</p>
+    <label class="loadButton">
+      <input type="file" id="planFile" accept="application/json,.json" hidden>
+      Elegir el archivo del plan
+    </label>
+    <p class="loadNote">El plan no se sube a ningún lado. Vive aquí, en este dispositivo, y funciona sin internet.</p>
+    <p class="loadError" id="loadError" hidden></p>
   </div>
 </div>
 

@@ -2,14 +2,13 @@
 // signal should still get the day. The shell is cached on install; the engine is big, so it is
 // cached the first time it is actually fetched.
 
-const VERSION = "nido-v2";
+const VERSION = "nido-v3";
 const SHELL = [
   "./",
   "index.html",
   "app.js",
   "styles.css",
   "manifest.webmanifest",
-  "plan.json",
   "vendor/browser_wasi_shim/index.js",
   "vendor/browser_wasi_shim/wasi.js",
   "vendor/browser_wasi_shim/wasi_defs.js",
@@ -23,19 +22,11 @@ const SHELL = [
   "icons/icon-512.png",
 ];
 
-// Every day of the planned week is cached up front, not just today. A caregiver who opens this on
-// Thursday with no signal should get Thursday, not a blank screen.
+// Only the app is cached, because only the app is served. The family plan lives in the phone that
+// loaded it and never travels through here.
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(VERSION).then(async (cache) => {
-      await cache.addAll(SHELL);
-      try {
-        const plan = await (await fetch("plan.json")).json();
-        await cache.addAll(Object.keys(plan.days).map((date) => `days/${date}.json`));
-      } catch (error) {
-        console.warn("the planned days could not be cached up front", error);
-      }
-    }).then(() => self.skipWaiting())
+    caches.open(VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
   );
 });
 

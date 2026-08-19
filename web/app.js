@@ -9,6 +9,7 @@
 import { WASI, File, OpenFile, ConsoleStdout } from "./vendor/browser_wasi_shim/index.js";
 
 const STORE_KEY = "nido.state.v2";
+const PLAN_KEY = "nido.plan.v1";
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const el = (id) => document.getElementById(id);
@@ -45,6 +46,7 @@ const T = {
 };
 
 let wasmModule = null;
+let bundle = null;
 let plan = null;
 let fixtureText = null;
 let planDay = null;
@@ -112,7 +114,42 @@ async function loadEngine() {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
   el("bootText").textContent = "Preparando el día…";
   wasmModule = await WebAssembly.compile(bytes);
-  plan = await (await fetch("plan.json")).json();
+}
+
+/// The plan is the family's, so it is never served from the site: it is loaded once here and stays
+/// in this device. A routine with a child's meals, sleep and weaning in it does not belong on a
+/// public URL, and nothing about this app needs it to be there.
+function loadPlan() {
+  try {
+    const raw = localStorage.getItem(PLAN_KEY);
+    if (!raw) return null;
+    const bundle = JSON.parse(raw);
+    if (bundle && bundle.plan && bundle.days) return bundle;
+  } catch (error) {
+    console.warn("the stored plan could not be read", error);
+  }
+  return null;
+}
+
+function askForPlan() {
+  el("boot").hidden = true;
+  el("load").hidden = false;
+  el("planFile").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      const bundle = JSON.parse(await file.text());
+      if (!bundle || !bundle.plan || !bundle.days || !Object.keys(bundle.days).length) {
+        throw new Error("ese archivo no trae un plan que yo entienda");
+      }
+      localStorage.setItem(PLAN_KEY, JSON.stringify(bundle));
+      location.reload();
+    } catch (error) {
+      const problem = el("loadError");
+      problem.hidden = false;
+      problem.textContent = `No pude leerlo: ${error.message}`;
+    }
+  });
 }
 
 /// Picks the day the family actually planned for. Past the end of the week the last day repeats,
@@ -122,7 +159,7 @@ async function loadDay() {
   const wanted = localDate();
   today = plan.days[wanted] ? wanted : dates[dates.length - 1];
   planDay = plan.days[today];
-  fixtureText = await (await fetch(`days/${today}.json`)).text();
+  fixtureText = bundle.days[today];
 }
 
 /// One request, one fresh instance. The engine is deterministic, so nothing is lost by not keeping
@@ -531,6 +568,11 @@ function wire() {
   el("plus15").addEventListener("click", async () => { state.offsetMinutes = (state.offsetMinutes || 0) + 15; save(); await render(); });
   el("plus60").addEventListener("click", async () => { state.offsetMinutes = (state.offsetMinutes || 0) + 60; save(); await render(); });
   el("realtime").addEventListener("click", async () => { state.offsetMinutes = null; save(); await loadDay(); await render(); });
+  el("changePlan").addEventListener("click", () => {
+    localStorage.removeItem(PLAN_KEY);
+    location.reload();
+  });
+
   el("reset").addEventListener("click", async () => {
     state.byDate[today] = { events: null, overrides: [], previousPreferred: {} };
     save();
@@ -543,6 +585,9 @@ function wire() {
 
 async function main() {
   try {
+    bundle = loadPlan();
+    if (!bundle) { askForPlan(); return; }
+    plan = bundle.plan;
     await loadEngine();
     await loadDay();
     const dates = Object.keys(plan.days).sort();
